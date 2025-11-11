@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Car, Users, ClipboardCheck, LayoutDashboard, UserPlus, Menu, X, LogOut } from 'lucide-react';
+import { Car, Users, ClipboardCheck, LayoutDashboard, UserPlus, Menu, X, LogOut,UserCog } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 
@@ -17,36 +17,58 @@ const Layout = ({ children }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const navItems = [
-    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/vehicles', label: 'Vehicles', icon: Car },
-    { path: '/visitors', label: 'Visitors', icon: Users },
-    { path: '/checkpoint', label: 'Checkpoint', icon: ClipboardCheck },
-    { path: '/register-driver', label: 'Add Driver', icon: UserPlus },
-  ];
+const navItems = [
+      { path: "/", label: "Dashboard", icon: LayoutDashboard },
+      { path: "/vehicles", label: "Vehicles", icon: Car },
+      { path: "/visitors", label: "Visitors", icon: Users },
+      { path: "/checkpoint", label: "Checkpoint", icon: ClipboardCheck },
+      { path: "/register-driver", label: "Add Driver", icon: UserPlus },
+      { path: '/manage-users', label: 'Manage Users', icon: UserCog },
+];
+  
 
   const closeSidebar = () => setIsSidebarOpen(false);
 
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b z-40 flex items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 rounded-md hover:bg-gray-200"
-          >
-            {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
-          <h1 className="text-lg font-bold text-white">Security Gate</h1>
-        </div>
-        <button
-          onClick={logout}
-          className="p-2 rounded-md hover:bg-gray-200 text-gray-700"
-        >
-          <LogOut className="h-5 w-5" />
-        </button>
-      </header>
+     <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-[#1f3d7a] border-b z-40 flex items-center justify-between px-4 text-white">
+  {/* Left section: menu + title */}
+  <div className="flex items-center gap-3">
+    <button
+      onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+      className="p-2 rounded-md hover:bg-blue-900/40 transition"
+    >
+      {isSidebarOpen ? (
+        <X className="h-6 w-6 text-white" />
+      ) : (
+        <Menu className="h-6 w-6 text-white" />
+      )}
+    </button>
+    <h1 className="text-lg font-semibold">Security Gate</h1>
+  </div>
+
+  {/* Right section: profile image + logout */}
+  <div className="flex items-center gap-3">
+    {/* Profile image */}
+    <img
+      src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name}`}
+
+      alt="Profile"
+      className="h-9 w-9 rounded-full border-2 border-white object-cover"
+    />
+
+    {/* Logout button */}
+    <button
+      onClick={logout}
+      className="p-2 rounded-md hover:bg-blue-900/40 transition"
+      title="Logout"
+    >
+      <LogOut className="h-5 w-5 text-white" />
+    </button>
+  </div>
+</header>
+
 
       {/* Sidebar */}
       <aside
@@ -57,14 +79,6 @@ const Layout = ({ children }) => {
         <div className="p-6 mt-16 lg:mt-0">
           <h1 className="text-xl font-bold text-white">Security Gate</h1>
           <p className="text-xs text-gray-500">Checkpoint Management</p>
-
-          {user && (
-            <div className="mt-3 pt-3 border-t border-gray-200">
-              <p className="text-xs text-gray-500">Logged in as</p>
-              <p className="text-sm font-medium text-gray-800">{user.name}</p>
-              <p className="text-xs text-gray-500 capitalize">{user.role}</p>
-            </div>
-          )}
         </div>
 
         <nav className="px-3 space-y-1">
@@ -89,15 +103,30 @@ const Layout = ({ children }) => {
           })}
         </nav>
 
-        <div className="absolute bottom-10 left-3 right-3 hidden lg:block">
-          <button
-            onClick={logout}
-            className="w-full flex items-center gap-3 px-3 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
-          >
-            <LogOut className="h-5 w-5" />
-            Logout
-          </button>
+     <div className="absolute bottom-16 left-3 right-3 hidden lg:block">
+      <div className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-100">
+        {/* Profile Section */}
+        <div className="flex items-center gap-3">
+          <img
+           src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name}`}
+            alt={user?.name || "Admin"}
+            className="h-8 w-8 rounded-full border border-gray-300 object-cover"
+          />
+          <span className="text-gray-700 font-medium truncate max-w-[120px]">
+            {user?.name || "Admin"}
+          </span>
         </div>
+
+        {/* Logout Button */}
+        <button
+          onClick={logout}
+          className="p-2 rounded-md hover:bg-gray-200 text-gray-700"
+        >
+          <LogOut className="h-5 w-5" />
+        </button>
+      </div>
+    </div>
+
       </aside>
 
       {/* Overlay for mobile */}

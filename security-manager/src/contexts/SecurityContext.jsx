@@ -26,11 +26,36 @@ export const SecurityProvider = ({ children }) => {
     setVehicles((prev) => [...prev, vehicle]);
   };
 
+  // SecurityContext.jsx
+const updateVehicle = (id, updates) => {
+  setVehicles((prev) =>
+    prev.map((vehicle) =>
+      vehicle.id === id ? { ...vehicle, ...updates } : vehicle
+    )
+  );
+};
+
+const deleteVehicle = (id) => {
+  setVehicles((prev) => prev.filter((vehicle) => vehicle.id !== id));
+};
+
   // Add new visitor
   const addVisitor = (visitor) => {
     setVisitors((prev) => [...prev, visitor]);
   };
 
+
+    const updateVisitor = (id, updates) => {
+    setVisitors((prev) =>
+      prev.map((visitor) =>
+        visitor.id === id ? { ...visitor, ...updates } : visitor
+      )
+    );
+  };
+
+  const deleteVisitor = (id) => {
+    setVisitors((prev) => prev.filter((visitor) => visitor.id !== id));
+  };
   // Add new check-in/out record
   const addCheckInOut = (checkInOut) => {
     setCheckInOuts((prev) => [...prev, checkInOut]);
@@ -59,29 +84,64 @@ export const SecurityProvider = ({ children }) => {
     );
   };
 
+    const updateDriver = (vehicleId, driverId, updates) => {
+    setVehicles((prev) =>
+      prev.map((vehicle) => {
+        if (vehicle.id === vehicleId) {
+          const updatedDrivers = (vehicle.drivers || []).map((driver) =>
+            driver.id === driverId ? { ...driver, ...updates } : driver
+          );
+          return { ...vehicle, drivers: updatedDrivers };
+        }
+        return vehicle;
+      })
+    );
+  };
+
+  const deleteDriver = (vehicleId, driverId) => {
+    setVehicles((prev) =>
+      prev.map((vehicle) =>
+        vehicle.id === vehicleId
+          ? {
+              ...vehicle,
+              drivers: (vehicle.drivers || []).filter(
+                (driver) => driver.id !== driverId
+              ),
+            }
+          : vehicle
+      )
+    );
+  };
   // Add a checkpoint
   const addCheckpoint = (checkpoint) => {
     setCheckpoints((prev) => [...prev, checkpoint]);
   };
 
   return (
-    <SecurityContext.Provider
-      value={{
-        vehicles,
-        visitors,
-        checkInOuts,
-        checkpoints,
-        securityPersonnel,
-        currentUser,
-        addVehicle,
-        addVisitor,
-        addCheckInOut,
-        updateCheckInOut,
-        setCurrentUser,
-        addDriver,
-        addCheckpoint,
-      }}
-    >
+<SecurityContext.Provider
+  value={{
+    vehicles,
+    visitors,
+    checkInOuts,
+    checkpoints,
+    securityPersonnel,
+    currentUser,
+    addVehicle,
+    addVisitor,
+    addCheckInOut,
+    updateCheckInOut,
+    setCurrentUser,
+    addDriver,
+    addCheckpoint,
+    updateVehicle,     // 👈 added
+    deleteVehicle,     // 👈 added
+    updateDriver,  // ✅ added
+    deleteDriver,  // ✅ added
+       updateVisitor,
+        deleteVisitor,
+  }}
+>
+
       {children}
     </SecurityContext.Provider>
   );

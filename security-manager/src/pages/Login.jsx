@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Shield, Eye, EyeOff } from "lucide-react";
+import logo from "../assets/logo.png"
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -32,10 +33,14 @@ const Login = () => {
       <div className="w-full max-w-md bg-white shadow-lg rounded-2xl p-6">
         <div className="text-center mb-6">
           <div className="flex justify-center mb-3">
-            <Shield className="h-12 w-12 text-[#1f3d7a]" />
+            <img
+              src={logo}
+              alt="Logo"
+              className="w-32 h-auto" // optional styling
+            />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800">Security Gate System</h2>
-          <p className="text-gray-500 mt-1">
+          <h5 className="text-xl font-bold text-gray-800">Security Post Management system</h5>
+          <p className="text-gray-500 mt-1 text-sm">
             Sign in to access checkpoint management
           </p>
         </div>
@@ -96,9 +101,8 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full flex items-center justify-center gap-2 bg-[#1f3d7a] text-white font-semibold py-2 rounded-md transition-colors ${
-              loading ? "opacity-70 cursor-not-allowed" : "hover:bg-blue-700"
-            }`}
+            className={`w-full flex items-center justify-center gap-2 bg-[#1f3d7a] text-white font-semibold py-2 rounded-md transition-colors ${loading ? "opacity-70 cursor-not-allowed" : "hover:bg-blue-700"
+              }`}
           >
             {loading && (
               <svg

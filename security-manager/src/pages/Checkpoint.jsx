@@ -13,7 +13,7 @@ const Checkpoint = () => {
   const [checkInOuts, setCheckInOuts] = useState([]);
   const [checkpoints, setCheckpoints] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-
+  const [loading, setLoading] = useState(true);
 const [filterType, setFilterType] = useState("all");
 const [filterDate, setFilterDate] = useState("");
 const [selectedActivity, setSelectedActivity] = useState(null);
@@ -77,6 +77,7 @@ const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
 
   // Fetch all initial data
   useEffect(() => {
+     setLoading(true);
     const fetchData = async () => {
       try {
         const [
@@ -102,6 +103,8 @@ const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
         setCheckpoints(checkpointsRes.data.data || []);
         setDrivers(driversRes.data.data || []); // 👈 Make sure you have a state for drivers
         setCurrentUser(userRes.data);
+
+        setLoading(false);
       } catch (error) {
         console.error(error);
         toast.error("Failed to fetch initial data");
@@ -131,6 +134,7 @@ const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
       setCheckpointName("");
       setCheckpointLocation("");
       setCheckpointDescription("");
+       window.location.reload();
     } catch (error) {
       console.error(error);
       toast.error("Failed to create checkpoint");
@@ -355,6 +359,43 @@ const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
     );
     toast.success("Exported to PDF");
   };
+
+
+    if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen text-gray-600">
+           <div className="flex flex-col items-center space-y-4">
+        <div className="relative">
+          <div className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/50">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-10 h-10 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 3l8 4v5a9 9 0 11-16 0V7l8-4z"
+              />
+            </svg>
+          </div>
+
+          {/* Spinner around logo */}
+          <div className="absolute inset-0 border-4 border-transparent border-t-blue-400 rounded-full animate-spin"></div>
+        </div>
+
+        {/* Text below logo */}
+        <h1 className="text-2xl font-semibold tracking-wide">Security Portal</h1>
+        <p className="text-sm text-gray-300 animate-pulse">
+          Loading Dashboard, please wait...
+        </p>
+      </div>
+      </div>
+    );
+  }
   return (
     <div className="p-6 space-y-6">
       <Toaster />

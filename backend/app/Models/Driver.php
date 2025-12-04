@@ -19,6 +19,7 @@ class Driver extends Model
         'status',
         'created_by',
          'vehicle_id',
+         'driver_type'
     ];
 
     /**

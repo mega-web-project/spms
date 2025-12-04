@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Plus, User, Grid, List, Pencil, Trash2, Loader2, Camera, X,Upload} from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
+import Swal from "sweetalert2";
 import axiosClient from "../api/axiosClient";
 import Webcam from "react-webcam";
 const Visitors = () => {
@@ -91,19 +92,29 @@ const Visitors = () => {
   };
 
   // Delete visitor
-  const handleDeleteVisitor = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this visitor?")) return;
+const handleDeleteVisitor = async (id) => {
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "This action cannot be undone!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+  });
 
+  if (result.isConfirmed) {
     try {
       await axiosClient.delete(`/visitors/${id}`);
-      toast.success("Visitor deleted successfully");
       setVisitors((prev) => prev.filter((v) => v.id !== id));
+      toast.success("Visitor deleted successfully");
     } catch (error) {
       console.error("Error deleting visitor:", error.response || error);
       toast.error("Failed to delete visitor");
     }
-  };
-
+  }
+};
   // Edit Visitor
   const handleEditVisitor = (visitor) => {
     setEditingVisitor(visitor);
@@ -226,48 +237,44 @@ const Visitors = () => {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white p-6 rounded-2xl shadow-lg border border-gray-200 w-full max-w-md mx-auto space-y-5">
-                    {/* Header */}
-                    <h2 className="text-xl font-semibold text-gray-800 tracking-tight">
-                      Capture Your Photo
-                    </h2>
+                  <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex flex-col items-center justify-center p-0">
 
-                    {/* Webcam Display */}
-                    <div className="relative w-full aspect-[4/3] overflow-hidden rounded-xl shadow-inner border border-gray-300 bg-black">
-                      <Webcam
-                        ref={webcamRef}
-                        screenshotFormat="image/jpeg"
-                        className="w-full h-full object-cover"
-                        videoConstraints={{ facingMode: "environment" }}
-                      />
+    {/* Webcam Full Screen */}
+    <div className="relative w-full h-full">
+      <Webcam
+        ref={webcamRef}
+        screenshotFormat="image/jpeg"
+        className="w-full h-full object-cover"
+        videoConstraints={{ facingMode: "environment" }}
+      />
 
-                      {/* Optional overlay indicator */}
-                      <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full shadow">
-                        LIVE
-                      </div>
-                    </div>
+      {/* LIVE Badge */}
+      <div className="absolute top-4 right-4 bg-red-500 text-white text-xs px-3 py-1 rounded-full shadow-lg">
+        LIVE
+      </div>
+    </div>
 
-                    {/* Buttons */}
-                    <div className="flex justify-center gap-4 w-full">
-                      <button
-                        type="button"
-                        onClick={capture}
-                        className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-full font-medium shadow-md hover:bg-blue-700 active:scale-95 transition-all duration-200 whitespace-nowrap"
-                      >
-                        <Camera className="w-5 h-5" />
-                        Capture
-                      </button>
+    {/* Bottom Buttons */}
+    <div className="absolute bottom-10 flex gap-4">
+      <button
+        type="button"
+        onClick={capture}
+        className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-blue-700 active:scale-95 transition-all duration-200"
+      >
+        <Camera className="w-6 h-6" />
+        Capture
+      </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setShowCamera(false)}
-                        className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full border border-gray-300 text-gray-600 font-medium hover:bg-gray-100 active:scale-95 transition-all duration-200 whitespace-nowrap"
-                      >
-                        <X className="w-5 h-5" />
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
+      <button
+        type="button"
+        onClick={() => setShowCamera(false)}
+        className="flex items-center gap-2 bg-gray-200 text-gray-700 px-6 py-3 rounded-full font-medium shadow hover:bg-gray-300 active:scale-95 transition-all duration-200"
+      >
+        <X className="w-6 h-6" />
+        Cancel
+      </button>
+    </div>
+  </div>
                 )}
               </div>
 

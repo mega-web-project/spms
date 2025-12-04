@@ -42,7 +42,7 @@ const Dashboard = () => {
       try {
         const { data } = await axiosClient.get("/checkinout");
         setCheckInOuts(data.data || []);
-        console.log("Fetched check-ins/outs:", data.data || []);
+     
       } catch (error) {
         console.error("Error fetching check-ins/outs:", error.response || error);
       }
@@ -142,19 +142,22 @@ const Dashboard = () => {
         />
       </div>
 
-  {/* Recent Activity */}
-<section className="bg-white rounded-2xl shadow border border-gray-100 p-6">
+{/* Recent Activity */}
+<section className="bg-white rounded border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-300">
   {recentActivity.length === 0 ? (
     <EmptyActivity />
   ) : (
     <>
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">
-        Recent Activity
-      </h2>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-xl font-semibold text-gray-800">Recent Activity</h2>
+        <span className="text-sm text-gray-500">
+          Showing {Math.min(recentActivity.length, 4)} of {recentActivity.length}
+        </span>
+      </div>
 
       <ul className="divide-y divide-gray-100">
         {recentActivity.slice(0, 4).map((activity) => {
-          // Get vehicle or visitor image
           const vehicleImage =
             activity.type === "vehicle" && activity.vehicles?.length > 0
               ? activity.vehicles[0].photo
@@ -168,11 +171,11 @@ const Dashboard = () => {
           return (
             <li
               key={activity.id}
-              className="flex items-center justify-between py-4 space-x-4"
+              className="flex items-center justify-between py-4 gap-4 hover:bg-gray-50 rounded-xl transition-all duration-200 px-2"
             >
-              {/* Left section: photos + info */}
-              <div className="flex items-center space-x-3">
-                {/* Photos */}
+              {/* Left: Image + Info */}
+              <div className="flex items-center gap-4">
+                {/* Avatar / Photo */}
                 {activity.type === "visitor" && activity.visitors?.length > 0 ? (
                   <div className="flex -space-x-2">
                     {activity.visitors.map((v) => (
@@ -180,7 +183,7 @@ const Dashboard = () => {
                         key={v.id}
                         src={v.photo}
                         alt={v.name}
-                        className="w-10 h-10 rounded-full border-2 border-white object-cover"
+                        className="w-10 h-10 rounded-full border-2 border-white object-cover shadow-sm"
                       />
                     ))}
                   </div>
@@ -188,54 +191,54 @@ const Dashboard = () => {
                   <img
                     src={vehicleImage}
                     alt={vehiclePlate}
-                    className="w-12 h-12 rounded-lg object-cover border"
+                    className="w-12 h-12 rounded-lg object-cover border border-gray-200 shadow-sm"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs font-medium">
                     N/A
                   </div>
                 )}
 
-                {/* Text info */}
+                {/* Text Info */}
                 <div>
-                  <p className="text-sm font-medium text-gray-800 capitalize">
+                  <p className="text-sm font-semibold text-gray-800 leading-tight">
                     {Array.isArray(activity.item_names)
                       ? activity.item_names.join(", ")
                       : activity.item_names || "Unknown"}
                   </p>
-                  <p className="text-xs text-gray-500 capitalize">
+                  <p className="text-xs text-gray-500">
                     {activity.checkpoint?.name || "Unknown Checkpoint"}
                   </p>
 
-                  {/* Type badge / driver info */}
-                  <span
-                    className={`text-xs font-medium px-2 py-1 rounded-full mt-1 inline-block ${
-                      activity.type === "vehicle"
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-green-100 text-green-700"
-                    }`}
-                  >
-                    {activity.type === "vehicle"
-                      ? `vehicle - ${vehiclePlate}`
-                      : `visitor - ${activity.visitors && activity.visitors.length > 0 ? activity.visitors[0].name : "Unknown"}`}
-                  </span>
+                  <div className="mt-1 flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        activity.type === "vehicle"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-green-100 text-green-700"
+                      }`}
+                    >
+                      {activity.type === "vehicle"
+                        ? `Vehicle • ${vehiclePlate}`
+                        : `Visitor • ${
+                            activity.visitors?.[0]?.name || "Unknown"
+                          }`}
+                    </span>
 
-                  {/* Added date and time */}
-                  <p className="text-xs text-gray-400 mt-1">
-                    {activity.created_at
-                      ? `${new Date(activity.created_at).toLocaleDateString()} • ${new Date(
-                          activity.created_at
-                        ).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}`
-                      : "No timestamp"}
-                  </p>
+                    <p className="text-xs text-gray-400">
+                      {activity.created_at
+                        ? new Date(activity.created_at).toLocaleString([], {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })
+                        : "No timestamp"}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Right section: status & shift */}
-              <div className="text-right space-y-1">
+              {/* Right: Status + Shift */}
+              <div className="text-right space-y-1 min-w-[80px]">
                 <span
                   className={`inline-block px-3 py-1 text-xs font-medium rounded-full capitalize ${
                     activity.status === "checked-in"
@@ -245,7 +248,7 @@ const Dashboard = () => {
                 >
                   {activity.status}
                 </span>
-                <p className="text-xs text-gray-400 capitalize">
+                <p className="text-xs text-gray-500 capitalize">
                   {activity.shift || "No shift"}
                 </p>
               </div>
@@ -254,14 +257,28 @@ const Dashboard = () => {
         })}
       </ul>
 
-      {/* View More button */}
+      {/* View More */}
       {recentActivity.length > 4 && (
-        <div className="mt-4 text-center">
+        <div className="mt-5 text-center">
           <a
             href="/checkpoint"
-            className="text-sm font-medium text-blue-600 hover:underline"
+            className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
           >
-            View More →
+            View More
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-4 h-4"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
           </a>
         </div>
       )}
@@ -273,13 +290,14 @@ const Dashboard = () => {
 
 
 
+
     </div>
   );
 };
 
 // ✅ Small UI Components
 const StatCard = ({ title, icon, value, color = "text-gray-900" }) => (
-  <div className="bg-white rounded-2xl shadow hover:shadow-md transition p-5 border border-gray-100">
+  <div className="bg-white rounded-xl hover:shadow-md transition p-5 border border-gray-100">
     <div className="flex items-center justify-between">
       <p className="text-sm font-semibold text-gray-600">{title}</p>
       {icon}

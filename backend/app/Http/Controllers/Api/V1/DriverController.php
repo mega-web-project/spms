@@ -39,6 +39,7 @@ public function store(Request $request)
             'license_number' => 'required|string|max:255|unique:drivers,license_number',
             'vehicle_number' => 'nullable|string|max:50',
             'photo' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
+            'driver_type' => 'required|in:staff,cargo', // 👈 added rule
         ]);
 
         $validated['created_by'] = auth()->id() ?? 1;
@@ -64,6 +65,7 @@ public function store(Request $request)
                 'phone' => $driver->phone,
                 'license_number' => $driver->license_number,
                 'vehicle_number' => $driver->vehicle_number ?? $vehicle->plate_number,
+                'driver_type' => $driver->driver_type, // 👈 include in vehicle JSON too
             ];
 
             // Save updated JSON back to vehicle
@@ -104,36 +106,59 @@ public function store(Request $request)
     /**
      * Update driver information.
      */
-    public function update(Request $request, Driver $driver)
-    {
-        $validated = $request->validate([
-            'full_name' => 'sometimes|required|string|max:255',
-            'license_number' => 'sometimes|required|string|max:255|unique:drivers,license_number,' . $driver->id,
-            'phone' => 'sometimes|required|string|max:20',
-            'vehicle_number' => 'nullable|string|max:50',
-            'company' => 'nullable|string|max:255',
-            'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'status' => 'nullable|string|in:active,inactive',
-        ]);
+  public function update(Request $request, Driver $driver)
+{
+    $validated = $request->validate([
+        'full_name' => 'sometimes|required|string|max:255',
+        'license_number' => 'sometimes|required|string|max:255|unique:drivers,license_number,' . $driver->id,
+        'phone' => 'sometimes|required|string|max:20|unique:drivers,phone,' . $driver->id,
+        'vehicle_number' => 'nullable|string|max:50',
+        'company' => 'nullable|string|max:255',
+        'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        'status' => 'nullable|string|in:active,inactive',
+        'driver_type' => 'nullable|in:staff,cargo', // 👈 added support for editing driver type
+    ]);
 
-        if ($request->hasFile('photo')) {
-            // delete old photo
-            if ($driver->photo && Storage::disk('public')->exists($driver->photo)) {
-                Storage::disk('public')->delete($driver->photo);
-            }
-
-            $path = $request->file('photo')->store('drivers', 'public');
-            $validated['photo'] = $path;
+    // ✅ Handle new photo upload
+    if ($request->hasFile('photo')) {
+        // Delete old photo if exists
+        if ($driver->photo && Storage::disk('public')->exists($driver->photo)) {
+            Storage::disk('public')->delete($driver->photo);
         }
 
-        $driver->update($validated);
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Driver updated successfully',
-            'data' => $driver
-        ]);
+        $path = $request->file('photo')->store('uploads/drivers', 'public');
+        $validated['photo'] = $path;
     }
+
+    // ✅ Update driver record
+    $driver->update($validated);
+
+    // ✅ Sync changes with vehicle’s drivers JSON (if assigned)
+    if ($driver->vehicle_id) {
+        $vehicle = Vehicle::find($driver->vehicle_id);
+        if ($vehicle && is_array($vehicle->drivers)) {
+            $updatedDrivers = collect($vehicle->drivers)->map(function ($d) use ($driver) {
+                if ($d['id'] == $driver->id) {
+                    $d['name'] = $driver->full_name;
+                    $d['phone'] = $driver->phone;
+                    $d['license_number'] = $driver->license_number;
+                    $d['vehicle_number'] = $driver->vehicle_number;
+                    $d['driver_type'] = $driver->driver_type; // 👈 update driver type
+                }
+                return $d;
+            })->toArray();
+
+            $vehicle->drivers = $updatedDrivers;
+            $vehicle->save();
+        }
+    }
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Driver updated successfully',
+        'data' => $driver,
+    ]);
+}
 
     /**
      * Remove a driver.

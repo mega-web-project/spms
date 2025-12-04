@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import axiosClient from "../api/axiosClient";
 import { Plus, Car, Grid, List, Pencil, Trash2, Loader2, Camera, Upload, X } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
 import Webcam from "react-webcam";
 
 const Vehicles = () => {
@@ -10,7 +12,7 @@ const Vehicles = () => {
   const [viewMode, setViewMode] = useState("list");
   const [loading, setLoading] = useState(false);
   const webcamRef = useRef(null);
-
+  const MySwal = withReactContent(Swal);
 
   // Form states
   const [plateNumber, setPlateNumber] = useState("");
@@ -87,44 +89,46 @@ const Vehicles = () => {
   };
 
   // Submit form (Add or Edit)
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!plateNumber || !model || !color) {
-      toast.error("Please fill all required fields");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Convert image object into array of base64 strings
-      const imageArray = Object.values(images);
-
-      const payload = {
-        plate_number: plateNumber,
-        model,
-        color,
-        images: imageArray, // send multiple images
-      };
-
-      
-      if (editId) {
-        await axiosClient.put(`/vehicles/${editId}`, payload);
-        toast.success("Vehicle updated successfully");
-      } else {
-        await axiosClient.post("/vehicles", payload);
-        toast.success("Vehicle added successfully");
-      }
-
-      fetchVehicles();
-      resetForm();
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to save vehicle");
-    } finally {
-      setLoading(false);
-    }
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!plateNumber || !model || !color) {
+    toast.error("Please fill all required fields");
+    return;
   }
+
+  setLoading(true);
+
+  try {
+    // Convert image object into array of base64 strings (remove empty/null)
+    const imageArray = Object.values(images).filter(
+      (img) => img !== null && img !== ""
+    );
+
+    const payload = {
+      plate_number: plateNumber,
+      model,
+      color,
+      images: imageArray,
+    };
+
+    if (editId) {
+      await axiosClient.put(`/vehicles/${editId}`, payload);
+      toast.success("Vehicle updated successfully");
+    } else {
+      await axiosClient.post("/vehicles", payload);
+      toast.success("Vehicle added successfully");
+    }
+
+    fetchVehicles();
+    resetForm();
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to save vehicle");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const resetForm = () => {
     setPlateNumber("");
@@ -135,39 +139,78 @@ const Vehicles = () => {
     setShowForm(false);
   };
 
-  // Edit existing vehicle
-  const handleEdit = (v) => {
-    setEditId(v.id);
-    setPlateNumber(v.plate_number);
-    setModel(v.model);
-    setColor(v.color);
+const handleEdit = (v) => {
+  setEditId(v.id);
+  setPlateNumber(v.plate_number);
+  setModel(v.model);
+  setColor(v.color);
 
-    if (v.images && v.images.length > 0) {
-      const formattedImages = {};
-      const positions = ["front", "back", "side"];
-      v.images.forEach((img, index) => {
-        formattedImages[positions[index]] = img; // each corresponds to front/back/side
-      });
-      setImages(formattedImages);
-    } else {
-      setImages({});
+  let vehicleImages = v.images;
+
+  if (typeof v.images === "string") {
+    try {
+      vehicleImages = JSON.parse(v.images);
+    } catch {
+      vehicleImages = [];
     }
+  }
 
-    setShowForm(true);
+  const positions = ["front", "back", "side"];
+
+  // Start with empty placeholders
+  const formattedImages = {
+    front: null,
+    back: null,
+    side: null,
   };
 
+  if (Array.isArray(vehicleImages) && vehicleImages.length > 0) {
+    vehicleImages.forEach((img, index) => {
+      const position = img.position || positions[index];
+
+      // FORMAT: saved as { url: "...", position: "front" }
+      if (typeof img === "object" && img.url) {
+        formattedImages[position] = img.url;
+      } 
+
+      // FORMAT: saved as string ("base64 or URL")
+      else if (typeof img === "string") {
+        formattedImages[position] = img;
+      }
+    });
+  }
+
+  // 🔥 THIS ensures preview sees all 3 keys every time
+  setImages(formattedImages);
+  setShowForm(true);
+};
+
+
   // Delete
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this vehicle?")) return;
+const handleDelete = async (id) => {
+  const result = await MySwal.fire({
+    title: "Are you sure?",
+    text: "You won't be able to revert this!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+  });
+
+  if (result.isConfirmed) {
     try {
       await axiosClient.delete(`/vehicles/${id}`);
       setVehicles((prev) => prev.filter((v) => v.id !== id));
-      toast.success("Vehicle deleted");
+      Swal.fire("Deleted!", "Vehicle has been deleted.", "success");
     } catch (error) {
       console.error(error);
-      toast.error("Failed to delete vehicle");
+      Swal.fire("Error!", "Failed to delete vehicle.", "error");
     }
-  };
+  }
+};
+
 
 
   if (loading) {
@@ -287,7 +330,7 @@ const Vehicles = () => {
                       {/* Upload */}
                       <label
                         htmlFor={`${pos}-upload`}
-                        className="flex items-center justify-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 cursor-pointer active:scale-95 transition-all duration-200"
+                        className="flex items-center justify-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 font-medium hover:bg-gray-100 cursor-pointer active:scale-95 transition-all duration-200"
                       >
                         <Upload className="w-5 h-5" />
                         Upload
@@ -313,40 +356,45 @@ const Vehicles = () => {
                       </button>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center bg-white p-4 rounded-xl shadow-md border border-gray-100 space-y-4">
-                      <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-gray-300">
-                        <Webcam
-                          ref={(ref) => (webcamRefs.current[pos] = ref)}
-                          screenshotFormat="image/jpeg"
-                          className="w-full h-full object-cover"
-                          videoConstraints={{ facingMode: "environment" }}
-                        />
-                        <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full shadow">
-                          LIVE
-                        </div>
-                      </div>
+                     <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex flex-col items-center justify-center">
+    {/* Webcam Full Screen */}
+    <div className="relative w-full h-full">
+      <Webcam
+        ref={(ref) => (webcamRefs.current[pos] = ref)}
+        screenshotFormat="image/jpeg"
+        className="w-full h-full object-cover"
+        videoConstraints={{ facingMode: "environment" }}
+      />
 
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => capturePhoto(pos)}
-                          className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-full font-medium shadow hover:bg-blue-700 active:scale-95 transition-all duration-200"
-                        >
-                          <Camera className="w-5 h-5" />
-                          Capture
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setShowCamera((prev) => ({ ...prev, [pos]: false }))
-                          }
-                          className="flex items-center gap-2 border border-gray-300 text-gray-600 px-5 py-2 rounded-full font-medium hover:bg-gray-100 active:scale-95 transition-all duration-200"
-                        >
-                          <X className="w-5 h-5" />
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
+      {/* LIVE Badge */}
+      <div className="absolute top-4 right-4 bg-red-500 text-white text-xs px-3 py-1 rounded-full shadow-lg">
+        LIVE
+      </div>
+    </div>
+
+    {/* Bottom Buttons */}
+    <div className="absolute bottom-10 flex gap-4">
+      <button
+        type="button"
+        onClick={() => capturePhoto(pos)}
+        className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-full font-medium shadow-lg hover:bg-blue-700 active:scale-95 transition-all duration-200"
+      >
+        <Camera className="w-6 h-6" />
+        Capture
+      </button>
+
+      <button
+        type="button"
+        onClick={() =>
+          setShowCamera((prev) => ({ ...prev, [pos]: false }))
+        }
+        className="flex items-center gap-2 bg-gray-200 text-gray-700 px-6 py-3 rounded-full font-medium shadow hover:bg-gray-300 active:scale-95 transition-all duration-200"
+      >
+        <X className="w-6 h-6" />
+        Cancel
+      </button>
+    </div>
+  </div>
                   )}
 
                   {/* Preview */}
